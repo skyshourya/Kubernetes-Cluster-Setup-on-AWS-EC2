@@ -43,16 +43,53 @@ This guide provides a comprehensive walkthrough to set up a multi-node Kubernete
 
 ---
 
-## 🔐 AWS EC2 Security Group Configuration
+# Kubernetes Cluster AWS EC2 Security Groups Configuration
 
-Ensure traffic on the following ports is allowed:
-
-- TCP: 6443, 2379-2380, 10250-10252, 30000-32767
-- UDP: VXLAN ports for Calico if needed (4789)
-
-Also disable **Source/Destination check** on all instances.
+This README documents the AWS Security Group configurations used for the Kubernetes cluster setup using `kubeadm`. It includes two security groups: one for the **Control Plane (Master)** and one for the **Worker Nodes**.
 
 ---
+
+## 🔐 Security Group for Control Plane (Master Node)
+
+### Inbound Rules
+
+| Rule ID              | IP Version | Type          | Protocol | Port Range     | Source     | Description |
+|----------------------|------------|---------------|----------|----------------|------------|-------------|
+| sgr-0ec9f31764b5ae5d2 | IPv4       | Custom TCP    | TCP      | 6443           | 0.0.0.0/0  | Kubernetes API Server |
+| sgr-0e16a3f8268cc3095 | IPv4       | Custom TCP    | TCP      | 6643           | 0.0.0.0/0  | Custom Port |
+| sgr-061c9275c636bda3e | IPv4       | SSH           | TCP      | 22             | 0.0.0.0/0  | SSH Access |
+| sgr-04e750d431bbc0ef1 | IPv4       | Custom TCP    | TCP      | 2379 - 2380    | 0.0.0.0/0  | etcd Server Client API |
+| sgr-01b2a7804b059c985 | IPv4       | Custom TCP    | TCP      | 10248 - 10260  | 0.0.0.0/0  | Kubelet, Healthz, Metrics, Webhooks |
+
+---
+
+## 🔐 Security Group for Worker Nodes
+
+### Inbound Rules
+
+| Rule ID              | IP Version | Type          | Protocol | Port Range     | Source     | Description |
+|----------------------|------------|---------------|----------|----------------|------------|-------------|
+| sgr-03aaf53af43870739 | IPv4       | Custom TCP    | TCP      | 30000 - 32767  | 0.0.0.0/0  | NodePort Range |
+| sgr-03a73cf8ed17cdab6 | IPv4       | Custom TCP    | TCP      | 10256          | 0.0.0.0/0  | Kube Proxy |
+| sgr-07213a64914302cba | IPv4       | Custom TCP    | TCP      | 10250          | 0.0.0.0/0  | Kubelet API |
+| sgr-0688bbbba6a5ac78b | IPv4       | SSH           | TCP      | 22             | 0.0.0.0/0  | SSH Access |
+
+---
+
+## ✅ Best Practices & Notes
+
+- Ensure that **source/destination checks** are disabled on both master and worker instances.
+- For Calico CNI to function properly, ensure **TCP 179** is allowed both ways between all nodes.
+- Restrict SSH access (port 22) to your IP range instead of allowing all (`0.0.0.0/0`) for improved security.
+
+---
+
+## 📎 References
+
+- [Kubernetes Required Ports](https://kubernetes.io/docs/reference/networking/ports-and-protocols/)
+- [AWS Disable Source/Destination Check](https://docs.aws.amazon.com/vpc/latest/userguide/work-with-nat-instances.html#EIP_Disable_SrcDestCheck)
+
+
 
 ## 🧰 Master Node Setup
 
